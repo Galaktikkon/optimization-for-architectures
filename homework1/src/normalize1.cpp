@@ -23,7 +23,7 @@ bool isPunctuation(char c)
     return ispunct(c) && c != ',';
 }
 
-string normalizeText(const string &input)
+string normalizeText(string &input)
 {
     string result = "";
     bool inWhitespace = false;
@@ -90,7 +90,7 @@ int main(int argc, char *argv[])
 
     string timeFile = (argc > 1) ? argv[1] : "benchmark_time.txt";
 
-    std::ofstream outFile(timeFile, ios::app);
+    ofstream outFile(timeFile, ios::app);
     if (outFile.is_open())
     {
         outFile << result << '\t';
@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
     }
     else
     {
-        std::cerr << "Unable to open file for writing time." << std::endl;
+        cerr << "Unable to open file for writing time." << endl;
     }
 
     return 0;

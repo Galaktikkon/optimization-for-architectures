@@ -45,10 +45,10 @@ string formatSize(size_t bytes)
     return out.str();
 }
 
-double test(string (*func)(const string &), string &input, bool verbose = false)
+double test(string (*func)(string &), string &input, bool verbose = false)
 {
     double start, end;
-    string result;
+    string result, size = formatSize(input.size());
 
     start = dclock();
     for (int i = 0; i < REPEATS; i++)
@@ -61,7 +61,7 @@ double test(string (*func)(const string &), string &input, bool verbose = false)
 
     if (verbose)
     {
-        printf("Benchmark result for input size %s over %d iterations: %.6f seconds\n", formatSize(input.size()).c_str(), REPEATS, bencharkTime);
+        printf("Benchmark result for input size %s over %d iterations: %.6f seconds\n", size.c_str(), REPEATS, bencharkTime);
     }
 
     return bencharkTime;

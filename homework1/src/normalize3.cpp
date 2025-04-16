@@ -23,74 +23,78 @@ bool isPunctuation(char c)
     return ispunct(static_cast<unsigned char>(c)) && c != ',';
 }
 
-string normalizeText(const string &input)
+string normalizeText(string &input)
 {
-    string result = "";
-
-    // Ad 1
-    // Preallocation optimization
-    result.reserve(input.size());
 
     bool inWhitespace = false;
 
-    for (char c : input)
+    // Ad 2
+    // Inplace transformation optimization
+    for (size_t i = 0; i < input.size(); ++i)
     {
-        if (!isPrintable(c))
-            continue;
-
-        if (isWhitespace(c))
+        if (!isPrintable(input[i]))
+        {
+            input[i] = '\0';
+        }
+        else if (isWhitespace(input[i]))
         {
             if (!inWhitespace)
             {
-                result += ' ';
+                input[i] = ' ';
                 inWhitespace = true;
+            }
+            else
+            {
+                input[i] = '\0';
             }
         }
         else
         {
-            if (isPunctuation(c))
+            if (isPunctuation(input[i]))
             {
-                result += ',';
+                input[i] = ',';
             }
             else
             {
-                result += static_cast<char>(tolower(c));
+                input[i] = static_cast<char>(tolower(input[i]));
             }
             inWhitespace = false;
         }
     }
 
-    string prevWord = "", word = "", tempResult = "";
-
     // Ad 1
     // Preallocation optimization
-    prevWord.reserve(result.size());
-    word.reserve(result.size());
-    tempResult.reserve(result.size());
+    string prevWord = "";
+    prevWord.reserve(input.size());
+    size_t wordStart = 0;
 
-    for (size_t i = 0; i < result.size(); ++i)
+    // Ad 2
+    // Inplace transformation optimization
+    for (size_t i = 0; i <= input.size(); ++i)
     {
-        if (result[i] == ' ')
+        if (i == input.size() || input[i] == ' ')
         {
-            if (!word.empty() && word != prevWord)
+            if (wordStart < i) // there is a word
             {
-                tempResult += word + ' ';
-                prevWord = word;
+                string_view word(&input[wordStart], i - wordStart);
+                if (word != prevWord)
+                {
+                    prevWord = word;
+                }
+                else
+                {
+                    // Replace duplicate word with '\0'
+                    for (size_t j = wordStart; j < i; ++j)
+                        input[j] = '\0';
+                }
             }
-            word.clear();
-        }
-        else
-        {
-            word += result[i];
+            wordStart = i + 1;
         }
     }
-    if (!word.empty() && word != prevWord)
-    {
-        tempResult += word + ' ';
-    }
-    result = tempResult;
 
-    return result;
+    input.erase(remove(input.begin(), input.end(), '\0'), input.end());
+
+    return input;
 }
 
 int main(int argc, char *argv[])
@@ -102,7 +106,7 @@ int main(int argc, char *argv[])
 
     string timeFile = (argc > 1) ? argv[1] : "benchmark_time.txt";
 
-    std::ofstream outFile(timeFile, ios::app);
+    ofstream outFile(timeFile, ios::app);
     if (outFile.is_open())
     {
         outFile << result << '\t';
@@ -110,7 +114,7 @@ int main(int argc, char *argv[])
     }
     else
     {
-        std::cerr << "Unable to open file for writing time." << std::endl;
+        cerr << "Unable to open file for writing time." << endl;
     }
 
     return 0;
