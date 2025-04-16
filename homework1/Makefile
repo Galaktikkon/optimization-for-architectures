@@ -1,5 +1,5 @@
 CXX = g++
-CXXFLAGS = -O3 -std=c++17
+CXXFLAGS = -O2 -std=c++17
 
 SRC_DIR = src
 BUILD_DIR = build
@@ -8,6 +8,9 @@ REPORT_DIR = report
 BENCHMARK_FILE = benchmark.txt
 DATA_FILE = data.txt
 INPUTS := $(wildcard $(DATA_DIR)/*.txt)
+
+PROFILE_BUILD_DIR = build-gprof
+INPUT_FILE_GPROF = $(DATA_DIR)/input1.txt
 
 VERSIONS := $(basename $(notdir $(wildcard $(SRC_DIR)/normalize*.cpp)))
 
@@ -19,9 +22,11 @@ $(BUILD_DIR)/%: $(SRC_DIR)/%.cpp | $(BUILD_DIR)
 $(BUILD_DIR):
 	@mkdir -p $(BUILD_DIR)
 
+$(PROFILE_BUILD_DIR):
+	@mkdir -p $(PROFILE_BUILD_DIR)
+
 $(REPORT_DIR):
 	@mkdir -p $(REPORT_DIR)
-
 
 test: all | ${REPORT_DIR}
 	
@@ -45,5 +50,21 @@ test: all | ${REPORT_DIR}
 		echo "" >> $(REPORT_DIR)/${DATA_FILE}; \
 	done
 
+
+
+gprof: | $(PROFILE_BUILD_DIR) $(REPORT_DIR)
+	@for prog in $(VERSIONS); do \
+		SRC=$(SRC_DIR)/$$prog.cpp; \
+		OUT=$(PROFILE_BUILD_DIR)/$$prog; \
+		$(CXX) -pg -std=c++17 -o $$OUT $$SRC; \
+		./$$OUT /dev/null < $(INPUT_FILE_GPROF) > /dev/null; \
+		echo "Generating gprof report for $$prog..."; \
+		gprof $$OUT gmon.out > $(REPORT_DIR)/$$prog.gprof.txt; \
+		rm -f gmon.out; \
+		rm -rf $(PROFILE_BUILD_DIR)/$$prog; \
+	done
+
 clean:
 	@rm -rf $(BUILD_DIR)
+	@rm -rf $(PROFILE_BUILD_DIR)
+	@rm -rf $(REPORT_DIR)

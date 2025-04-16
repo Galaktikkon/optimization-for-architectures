@@ -10,38 +10,32 @@ using namespace std;
 
 string normalizeText(string &input) {
 
-  bool inWhitespace = false;
+  // Ad 4
+  // iterators and standard algorithms optimization
+  input.erase(remove_if(input.begin(), input.end(),
+                        [](char c) { return c < 32 || c > 126; }),
+              input.end());
 
-  // Ad 3
-  // Inplace transformation optimization
-  for (size_t i = 0; i < input.size(); ++i) {
-    if (input[i] < 32 || input[i] > 126) {
-      input[i] = '\0';
-    } else if (isspace(static_cast<unsigned char>(input[i]))) {
-      if (!inWhitespace) {
-        input[i] = ' ';
-        inWhitespace = true;
+  bool inSpace = false;
+  transform(input.begin(), input.end(), input.begin(), [&inSpace](char c) {
+    if (isspace(static_cast<unsigned char>(c))) {
+      if (!inSpace) {
+        inSpace = true;
+        return ' ';
       } else {
-        input[i] = '\0';
+        return '\0';
       }
     } else {
-      if (ispunct(static_cast<unsigned char>(input[i])) && input[i] != ',') {
-        input[i] = ',';
-      } else {
-        input[i] =
-            static_cast<char>(tolower(static_cast<unsigned char>(input[i])));
-      }
-      inWhitespace = false;
+      inSpace = false;
+      if (ispunct(static_cast<unsigned char>(c)) && c != ',')
+        return ',';
+      return static_cast<char>(tolower(static_cast<unsigned char>(c)));
     }
-  }
-
-  input.erase(remove(input.begin(), input.end(), '\0'), input.end());
+  });
 
   size_t prevStart = string::npos, prevLen = 0;
   size_t wordStart = 0;
 
-  // Ad 3
-  // Inplace transformation optimization
   for (size_t i = 0; i <= input.size(); ++i) {
     if (i == input.size() || input[i] == ' ') {
       if (wordStart < i) {
@@ -59,8 +53,7 @@ string normalizeText(string &input) {
         }
 
         if (isDuplicate) {
-          for (size_t j = wordStart; j < i; ++j)
-            input[j] = '\0';
+          fill(input.begin() + wordStart, input.begin() + i, '\0');
           if (i < input.size() && input[i] == ' ')
             input[i] = '\0';
         } else {
@@ -81,15 +74,19 @@ int main(int argc, char *argv[]) {
   string input;
   getline(cin, input, '\0');
 
-  double result = test(normalizeText, input, true);
-  string timeFile = (argc > 1) ? argv[1] : "benchmark_time.txt";
-
-  ofstream outFile(timeFile, ios::app);
-  if (outFile.is_open()) {
-    outFile << result << '\t';
-    outFile.close();
+  if (argc > 1 && string(argv[1]) == "--validate") {
+    cout << normalizeText(input) << flush;
   } else {
-    cerr << "Unable to open file for writing time." << endl;
+    double result = test(normalizeText, input, true);
+    string timeFile = (argc > 1) ? argv[1] : "benchmark_time.txt";
+
+    ofstream outFile(timeFile, ios::app);
+    if (outFile.is_open()) {
+      outFile << result << '\t';
+      outFile.close();
+    } else {
+      cerr << "Unable to open file for writing time." << endl;
+    }
   }
 
   return 0;

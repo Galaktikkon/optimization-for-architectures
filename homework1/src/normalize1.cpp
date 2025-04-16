@@ -1,105 +1,73 @@
 using namespace std;
 
-#include <iostream>
-#include <string>
-#include <sstream>
+#include "test.h"
 #include <algorithm>
 #include <cctype>
 #include <fstream>
-#include "test.h"
+#include <iostream>
+#include <sstream>
+#include <string>
 
-bool isPrintable(char c)
-{
-    return c >= 32 && c <= 126;
-}
+// Ad 1
+// Base case
 
-bool isWhitespace(char c)
-{
-    return c == ' ' || c == '\t' || c == '\n';
-}
+string normalizeText(string &input) {
+  string result = "";
+  bool inWhitespace = false;
 
-bool isPunctuation(char c)
-{
-    return ispunct(c) && c != ',';
-}
+  for (char c : input) {
+    if (c < 32 || c > 126)
+      continue;
 
-string normalizeText(string &input)
-{
-    string result = "";
-    bool inWhitespace = false;
-
-    for (char c : input)
-    {
-        if (!isPrintable(c))
-            continue;
-
-        if (isWhitespace(c))
-        {
-            if (!inWhitespace)
-            {
-                result += ' ';
-                inWhitespace = true;
-            }
-        }
-        else
-        {
-            if (isPunctuation(c))
-            {
-                result += ',';
-            }
-            else
-            {
-                result += tolower(c);
-            }
-            inWhitespace = false;
-        }
+    if (isspace(static_cast<unsigned char>(c))) {
+      if (!inWhitespace) {
+        result += ' ';
+        inWhitespace = true;
+      }
+    } else {
+      if (ispunct(static_cast<unsigned char>(c)) && c != ',') {
+        result += ',';
+      } else {
+        result += static_cast<char>(tolower(static_cast<unsigned char>(c)));
+      }
+      inWhitespace = false;
     }
+  }
 
-    string prevWord = "", word = "", tempResult = "";
-    for (size_t i = 0; i < result.size(); ++i)
-    {
-        if (result[i] == ' ')
-        {
-            if (!word.empty() && word != prevWord)
-            {
-                tempResult += word + ' ';
-                prevWord = word;
-            }
-            word.clear();
-        }
-        else
-        {
-            word += result[i];
-        }
-    }
-    if (!word.empty() && word != prevWord)
-    {
+  string prevWord = "", word = "", tempResult = "";
+  for (size_t i = 0; i < result.size(); ++i) {
+    if (result[i] == ' ') {
+      if (!word.empty() && word != prevWord) {
         tempResult += word + ' ';
+        prevWord = word;
+      }
+      word.clear();
+    } else {
+      word += result[i];
     }
-    result = tempResult;
+  }
+  if (!word.empty() && word != prevWord) {
+    tempResult += word + ' ';
+  }
+  result = tempResult;
 
-    return result;
+  return result;
 }
 
-int main(int argc, char *argv[])
-{
-    string input;
-    getline(cin, input, '\0');
+int main(int argc, char *argv[]) {
+  string input;
+  getline(cin, input, '\0');
 
-    double result = test(normalizeText, input, true);
+  double result = test(normalizeText, input, true);
+  string timeFile = (argc > 1) ? argv[1] : "benchmark_time.txt";
 
-    string timeFile = (argc > 1) ? argv[1] : "benchmark_time.txt";
+  ofstream outFile(timeFile, ios::app);
+  if (outFile.is_open()) {
+    outFile << result << '\t';
+    outFile.close();
+  } else {
+    cerr << "Unable to open file for writing time." << endl;
+  }
 
-    ofstream outFile(timeFile, ios::app);
-    if (outFile.is_open())
-    {
-        outFile << result << '\t';
-        outFile.close();
-    }
-    else
-    {
-        cerr << "Unable to open file for writing time." << endl;
-    }
-
-    return 0;
+  return 0;
 }
